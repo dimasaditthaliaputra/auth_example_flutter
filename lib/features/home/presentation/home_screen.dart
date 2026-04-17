@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../auth/domain/app_user.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/welcome_screen.dart';
+import '../../../widgets/web_safe_image/web_safe_image.dart';
 
 // HomeScreen: dashboard utama setelah user berhasil login.
 // Di sini aku nampilin info user dari Supabase dan ada tombol logout.
@@ -214,14 +215,17 @@ class _WelcomeCard extends StatelessWidget {
       child: Row(
         children: [
           // Avatar
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            backgroundImage:
-                user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-            child: user.photoUrl == null
-                ? const Icon(Icons.person, color: Colors.white, size: 32)
-                : null,
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: user.photoUrl != null
+                ? WebSafeImage(url: user.photoUrl!)
+                : const Icon(Icons.person, color: Colors.white, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -368,16 +372,18 @@ class SettingsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage: user.photoUrl != null
-                        ? NetworkImage(user.photoUrl!)
-                        : null,
-                    child: user.photoUrl == null
-                        ? Icon(Icons.favorite,
-                            size: 40, color: Theme.of(context).colorScheme.onPrimary)
-                        : null,
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: user.photoUrl != null
+                        ? WebSafeImage(url: user.photoUrl!)
+                        : Icon(Icons.favorite,
+                            size: 40, color: Theme.of(context).colorScheme.onPrimary),
                   ),
                   const SizedBox(height: 16),
                   Text(
