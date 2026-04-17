@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -62,14 +63,25 @@ class AuthRepository {
   // Login pakai Google SSO
 
   Future<AppUser?> signInWithGoogle() async {
-    // Cek apakah platform support authenticate() (hampir semua platform support)
+    // Pada platform Web, google_sign_in v7.2+ tidak mensupport pemanggilan login pop-up 
+    // secara manual tanpa menggunakan widget GoogleSignInButton khusus.
+    // Oleh karena itu, kita bypass dengan langsung menggunakan Firebase Auth provider!
+    if (kIsWeb) {
+      final googleProvider = firebase_auth.GoogleAuthProvider();
+      
+      final userCredential = await _firebaseAuth.signInWithPopup(googleProvider);
+      final user = userCredential.user;
+      if (user == null) return null;
+
+      return await _syncUserToSupabase(user);
+    }
+
+    // Untuk Mobile (Android/iOS)
     if (!GoogleSignIn.instance.supportsAuthenticate()) {
       throw Exception('Google Sign-In tidak didukung di platform ini.');
     }
 
-    // Trigger Google Sign-In flow yang minta pilih akun
-    final GoogleSignInAccount googleUser =
-        await GoogleSignIn.instance.authenticate();
+    final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
     // Di google_sign_in v7, .authentication tidak perlu di-await
     // sayang km cm perlu idToken untuk Firebase (accessToken terpisah untuk Google API)

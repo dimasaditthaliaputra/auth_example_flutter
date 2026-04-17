@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // import untuk kIsWeb
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'firebase_options.dart';
 
 import 'features/auth/presentation/splash_screen.dart';
 
@@ -11,31 +13,46 @@ const String _supabaseAnonKey =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  String? initError;
+  
+  try {
+    // Inisialisasi Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Inisialisasi Firebase
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'AIzaSyCjNDT0QfbA7la30W03RMue0mNj77aXCVk',
-      appId: '1:869361773034:android:151bdf3f55ab8990d0aa93',
-      messagingSenderId: '869361773034',
-      projectId: 'authexample-9c207',
-    ),
-  );
+    // Inisialisasi GoogleSignIn
+    try {
+      if (kIsWeb) {
+        await GoogleSignIn.instance.initialize(
+          clientId: '869361773034-4vias09lbl45f3iddd4gq1hul8hnivk7.apps.googleusercontent.com',
+        );
+      } else {
+        await GoogleSignIn.instance.initialize(
+          clientId: '869361773034-4vias09lbl45f3iddd4gq1hul8hnivk7.apps.googleusercontent.com',
+          serverClientId: '869361773034-4vias09lbl45f3iddd4gq1hul8hnivk7.apps.googleusercontent.com',
+        );
+      }
+    } catch (e) {
+        initError = 'Google Sign In Error: $e';
+    }
 
-  // Inisialisasi GoogleSignIn
-  await GoogleSignIn.instance.initialize(
-    serverClientId:
-        '869361773034-4vias09lbl45f3iddd4gq1hul8hnivk7.apps.googleusercontent.com',
-  );
+    // Inisialisasi Supabase
+    if (initError == null) {
+        await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);
+    }
+  } catch (e, stackTrace) {
+    debugPrint('Init Error: $e\n$stackTrace');
+    initError = e.toString();
+  }
 
-  // Inisialisasi Supabase
-  await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);
-
-  runApp(const MyApp());
+  runApp(MyApp(initError: initError));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? initError;
+  const MyApp({super.key, this.initError});
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +141,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const SplashScreen(),
+      home: initError != null
+          ? Scaffold(
+              body: Center(
+                  child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        'Initialization Error:\n\n$initError',
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                      ))),
+            )
+          : const SplashScreen(),
     );
   }
 }
